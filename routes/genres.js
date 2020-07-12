@@ -1,13 +1,17 @@
+const validateObjectId = require("../middleware/validateObjectId");
 const express = require("express");
 const { Genre, validate } = require("../models/genre");
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
+const asyncMiddleware = require("../middleware/async");
+const mongoose = require("mongoose");
 
 //router does not work when working with several modules
 const router = express.Router();
 
 //no if routes, all new paths are defined using router.get()
 router.get("/", async (req, res) => {
+  //throw new Error("could not get genres.");
   const genres = await Genre.find().select({ name: 1 }).sort({ name: 1 });
   res.send(genres);
 });
@@ -16,7 +20,6 @@ router.get("/", async (req, res) => {
 //buils schema for input validation with joi
 //include auth to be excuted before post.
 router.post("/", auth, async (req, res) => {
-  console.log("name parameter", req.body.name);
   const { error } = validate(req.body);
   if (error) {
     //return 400 response, bad request
@@ -64,7 +67,7 @@ router.delete("/:id", [auth, admin], async (req, res) => {
   res.send(genre);
 });
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", validateObjectId, async (req, res) => {
   const genre = await Genre.findById(req.params.id);
 
   //include return to exit the function
